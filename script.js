@@ -1,51 +1,55 @@
-// Initialize the Leaflet map
-var map = L.map('map').setView([47.5162, 14.5501], 7); // Center on Austria
+// Volunteering in Austria - leaflet choropleth
+// single metric for now (% volunteers from population)
 
-// Add a base map layer
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+let map, geoLayer, regionData = {};
 
-// Load GeoJSON data (Austrian state boundaries)
-fetch('laender_999_geo.json')
-    .then(response => response.json())
-    .then(geojsonData => {
-        // Load volunteer data
-        fetch('data.json')
-            .then(response => response.json())
-            .then(volunteerData => {
-                let regionData = {};
-                
-                // Convert volunteerData to a lookup table
-                volunteerData.forEach(entry => {
-                    regionData[entry.state] = entry.perc_volunteers_from_pop;
-                });
+function getColor(value) {
+  return value > 50 ? "#800026" :
+         value > 45 ? "#BD0026" :
+         value > 40 ? "#E31A1C" :
+         value > 35 ? "#FC4E2A" :
+         value > 30 ? "#FD8D3C" :
+         value > 25 ? "#FEB24C" :
+         value > 20 ? "#FED976" :
+                      "#FFEDA0";
+}
 
-                // Create the GeoJSON layer
-                L.geoJson(geojsonData, {
-                    style: feature => ({
-                        fillColor: getColor(regionData[feature.properties.name] || 0),
-                        weight: 2,
-                        color: 'white',
-                        fillOpacity: 0.7
-                    }),
-                    onEachFeature: (feature, layer) => {
-                        let stateName = feature.properties.name;
-                        let volunteerRate = regionData[stateName] || "No data";
-                        layer.bindPopup(`<b>${stateName}</b><br>Volunteer Rate: ${volunteerRate}%`);
-                    }
-                }).addTo(map);
-            });
+function init() {
+  map = L.map("map").setView([47.5162, 14.5501], 7);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+
+  Promise.all([
+    fetch("laender_999_geo.json").then(r => r.json()),
+    fetch("data.json").then(r => r.json()),
+  ]).then(([geo, vd]) => {
+    vd.forEach(entry => {
+      if (entry.state === "Austria") return;
+      regionData[entry.state] = entry.perc_volunteers_from_pop;
     });
 
-// Function to determine color based on volunteering rate
-function getColor(value) {
-    return value > 50 ? '#800026' :
-           value > 45 ? '#BD0026' :
-           value > 40 ? '#E31A1C' :
-           value > 35 ? '#FC4E2A' :
-           value > 30 ? '#FD8D3C' :
-           value > 25 ? '#FEB24C' :
-           value > 20 ? '#FED976' :
-                        '#FFEDA0';
+    geoLayer = L.geoJson(geo, {
+      style: feature => ({
+        fillColor: getColor(regionData[feature.properties.name] || 0),
+        weight: 1.5,
+        color: "white",
+        fillOpacity: 0.78,
+      }),
+      onEachFeature: (feature, layer) => {
+        const name = feature.properties.name;
+        const v = regionData[name];
+        layer.bindTooltip(
+          `<b>${name}</b><br>% volunteers: ${v != null ? v.toFixed(1) + "%" : "—"}`,
+          { sticky: true }
+        );
+        layer.on({
+          mouseover: () => layer.setStyle({ weight: 3, color: "#333" }),
+          mouseout: () => geoLayer.resetStyle(layer),
+        });
+      },
+    }).addTo(map);
+  });
 }
+
+init();
