@@ -16,10 +16,27 @@ body {
 
 header {
   text-align: center;
-  padding: 20px 16px 10px;
+  padding: 20px 16px 6px;
 }
 header h1 { margin: 0 0 4px 0; font-size: 1.7rem; }
 .sub { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+}
+.controls label { font-weight: 600; }
+.controls select {
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+}
 
 #map {
   height: 620px;
