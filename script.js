@@ -1,15 +1,20 @@
 // Volunteering in Austria - leaflet choropleth
-// metric is now switchable
+// metric is now switchable; legend follows the active metric
 
 const METRICS = [
   { key: "perc_volunteers_from_pop", label: "% volunteers (total)", suffix: "%" },
   { key: "perc_formal_from_pop",     label: "% formal volunteers", suffix: "%" },
   { key: "perc_informal_from_pop",   label: "% informal volunteers", suffix: "%" },
+  { key: "avg_hours_vlntrs",         label: "avg weekly hours (all)", suffix: " h" },
+  { key: "avg_hours_formal",         label: "avg weekly hours (formal)", suffix: " h" },
+  { key: "avg_hours_informal",       label: "avg weekly hours (informal)", suffix: " h" },
+  { key: "median_hours_vlntrs",      label: "median weekly hours (all)", suffix: " h" },
 ];
 
 const PALETTE = ["#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026"];
 
 let map, geoLayer, regionData = {}, currentMetric = METRICS[0], allData = [];
+let legendCtl;
 
 function buildSelect() {
   const sel = document.getElementById("metric");
@@ -23,6 +28,7 @@ function buildSelect() {
     currentMetric = METRICS[parseInt(e.target.value, 10)];
     rebuildRegionLookup();
     redrawLayer();
+    redrawLegend();
   });
 }
 
@@ -63,6 +69,19 @@ function redrawLayer() {
   }
 }
 
+function redrawLegend() {
+  if (!legendCtl) return;
+  const stops = getStops();
+  const div = legendCtl.getContainer();
+  let html = `<strong>${currentMetric.label}</strong><br>`;
+  for (let i = 0; i < stops.length; i++) {
+    const lo = stops[i].toFixed(1);
+    const hi = i < stops.length - 1 ? stops[i + 1].toFixed(1) : "+";
+    html += `<div><i style="background:${PALETTE[i + 1] || PALETTE[PALETTE.length - 1]}"></i>${lo} - ${hi}${currentMetric.suffix}</div>`;
+  }
+  div.innerHTML = html;
+}
+
 function fmt(v, suffix) {
   if (v == null || isNaN(v)) return "—";
   return (Math.round(v * 10) / 10) + suffix;
@@ -73,6 +92,10 @@ function init() {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
+
+  legendCtl = L.control({ position: "bottomright" });
+  legendCtl.onAdd = () => L.DomUtil.create("div", "legend");
+  legendCtl.addTo(map);
 
   Promise.all([
     fetch("laender_999_geo.json").then(r => r.json()),
@@ -98,6 +121,7 @@ function init() {
       },
     }).addTo(map);
     redrawLayer();
+    redrawLegend();
   });
 }
 
