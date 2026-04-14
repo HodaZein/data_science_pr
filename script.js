@@ -87,6 +87,24 @@ function fmt(v, suffix) {
   return (Math.round(v * 10) / 10) + suffix;
 }
 
+function showPanel(stateName) {
+  const row = allData.find(e => e.state === stateName);
+  document.getElementById("panel-state").textContent = stateName;
+  document.getElementById("panel-hint").textContent = row ? "values for this state" : "no data";
+  if (!row) {
+    document.getElementById("panel-numbers").innerHTML = "";
+    return;
+  }
+  document.getElementById("panel-numbers").innerHTML = `
+    <div class="kv"><span class="k">total volunteers (k)</span><span class="v">${fmt(row.total_volunteers, "")}</span></div>
+    <div class="kv"><span class="k">% of population</span><span class="v">${fmt(row.perc_volunteers_from_pop, "%")}</span></div>
+    <div class="kv"><span class="k">% formal</span><span class="v">${fmt(row.perc_formal_from_pop, "%")}</span></div>
+    <div class="kv"><span class="k">% informal</span><span class="v">${fmt(row.perc_informal_from_pop, "%")}</span></div>
+    <div class="kv"><span class="k">avg weekly hours</span><span class="v">${fmt(row.avg_hours_vlntrs, " h")}</span></div>
+    <div class="kv"><span class="k">median weekly hours</span><span class="v">${fmt(row.median_hours_vlntrs, " h")}</span></div>
+  `;
+}
+
 function init() {
   map = L.map("map").setView([47.5162, 14.5501], 7);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -117,6 +135,10 @@ function init() {
             ).openTooltip();
           },
           mouseout: () => geoLayer.resetStyle(layer),
+          click: () => {
+            map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+            showPanel(name);
+          },
         });
       },
     }).addTo(map);
