@@ -69,9 +69,26 @@ main {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 18px;
+  margin-bottom: 18px;
 }
 .kv .k { display: block; color: var(--muted); font-size: 0.78rem; }
 .kv .v { font-weight: 600; font-size: 1.05rem; }
+
+#panel-chart .bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 60px;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 0.85rem;
+}
+#panel-chart .bar-row .label { color: var(--muted); }
+#panel-chart .bar-row .bar {
+  height: 12px;
+  background: linear-gradient(90deg, #FEB24C, var(--accent));
+  border-radius: 3px;
+}
+#panel-chart .bar-row .num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .legend {
   background: white;

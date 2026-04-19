@@ -93,6 +93,7 @@ function showPanel(stateName) {
   document.getElementById("panel-hint").textContent = row ? "values for this state" : "no data";
   if (!row) {
     document.getElementById("panel-numbers").innerHTML = "";
+    document.getElementById("panel-chart").innerHTML = "";
     return;
   }
   document.getElementById("panel-numbers").innerHTML = `
@@ -103,6 +104,26 @@ function showPanel(stateName) {
     <div class="kv"><span class="k">avg weekly hours</span><span class="v">${fmt(row.avg_hours_vlntrs, " h")}</span></div>
     <div class="kv"><span class="k">median weekly hours</span><span class="v">${fmt(row.median_hours_vlntrs, " h")}</span></div>
   `;
+
+  // mini bar chart: shares of formal / informal / mixed
+  const vals = [
+    ["% volunteers", row.perc_volunteers_from_pop],
+    ["% formal",     row.perc_formal_from_pop],
+    ["% informal",   row.perc_informal_from_pop],
+    ["formal+inf.",  row.perc_formal_informal_from_vlntrs],
+    ["formal only",  row.perc_formal_only_from_vlntrs],
+    ["infomral only",row.perc_informal_only_from_vlntrs],
+  ];
+  const max = Math.max(...vals.map(v => v[1] || 0));
+  const chartHtml = vals.map(([lbl, v]) => {
+    const w = max ? Math.round(((v || 0) / max) * 100) : 0;
+    return `<div class="bar-row">
+      <span class="label">${lbl}</span>
+      <span class="bar" style="width:${w}%"></span>
+      <span class="num">${fmt(v, "%")}</span>
+    </div>`;
+  }).join("");
+  document.getElementById("panel-chart").innerHTML = chartHtml;
 }
 
 function init() {
