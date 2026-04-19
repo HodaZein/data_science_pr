@@ -112,7 +112,7 @@ function showPanel(stateName) {
     ["% informal",   row.perc_informal_from_pop],
     ["formal+inf.",  row.perc_formal_informal_from_vlntrs],
     ["formal only",  row.perc_formal_only_from_vlntrs],
-    ["infomral only",row.perc_informal_only_from_vlntrs],
+    ["informal only",row.perc_informal_only_from_vlntrs],
   ];
   const max = Math.max(...vals.map(v => v[1] || 0));
   const chartHtml = vals.map(([lbl, v]) => {
