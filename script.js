@@ -1,5 +1,6 @@
-// Volunteering in Austria - leaflet choropleth
-// metric is now switchable; legend follows the active metric
+// Volunteering in Austria - interactive map
+// state: pick metric -> recolour map + update legend
+// click a state -> right panel shows full breakdown + tiny bar chart
 
 const METRICS = [
   { key: "perc_volunteers_from_pop", label: "% volunteers (total)", suffix: "%" },
@@ -11,11 +12,13 @@ const METRICS = [
   { key: "median_hours_vlntrs",      label: "median weekly hours (all)", suffix: " h" },
 ];
 
+// 7-step palette (same family as before)
 const PALETTE = ["#FFEDA0","#FED976","#FEB24C","#FD8D3C","#FC4E2A","#E31A1C","#BD0026","#800026"];
 
-let map, geoLayer, regionData = {}, currentMetric = METRICS[0], allData = [];
+let map, geoLayer, regionData = {}, currentMetric = METRICS[0], allData = [], geo;
 let legendCtl;
 
+// build the dropdown
 function buildSelect() {
   const sel = document.getElementById("metric");
   METRICS.forEach((m, i) => {
@@ -35,7 +38,7 @@ function buildSelect() {
 function rebuildRegionLookup() {
   regionData = {};
   allData.forEach(entry => {
-    if (entry.state === "Austria") return;
+    if (entry.state === "Austria") return; // keep national row separate
     regionData[entry.state] = entry[currentMetric.key];
   });
 }
@@ -44,8 +47,11 @@ function getStops() {
   const vals = Object.values(regionData).filter(v => typeof v === "number");
   if (!vals.length) return [0, 1, 2, 3, 4, 5, 6];
   const mn = Math.min(...vals), mx = Math.max(...vals);
+  // 7 evenly spaced thresholds (lower bounds for each bucket)
   const stops = [];
-  for (let i = 0; i < 7; i++) stops.push(mn + (mx - mn) * (i / 7));
+  for (let i = 0; i < 7; i++) {
+    stops.push(mn + (mx - mn) * (i / 7));
+  }
   return stops;
 }
 
@@ -96,7 +102,7 @@ function showPanel(stateName) {
     document.getElementById("panel-chart").innerHTML = "";
     return;
   }
-  document.getElementById("panel-numbers").innerHTML = `
+  const numsHtml = `
     <div class="kv"><span class="k">total volunteers (k)</span><span class="v">${fmt(row.total_volunteers, "")}</span></div>
     <div class="kv"><span class="k">% of population</span><span class="v">${fmt(row.perc_volunteers_from_pop, "%")}</span></div>
     <div class="kv"><span class="k">% formal</span><span class="v">${fmt(row.perc_formal_from_pop, "%")}</span></div>
@@ -104,6 +110,7 @@ function showPanel(stateName) {
     <div class="kv"><span class="k">avg weekly hours</span><span class="v">${fmt(row.avg_hours_vlntrs, " h")}</span></div>
     <div class="kv"><span class="k">median weekly hours</span><span class="v">${fmt(row.median_hours_vlntrs, " h")}</span></div>
   `;
+  document.getElementById("panel-numbers").innerHTML = numsHtml;
 
   // mini bar chart: shares of formal / informal / mixed
   const vals = [
@@ -139,11 +146,17 @@ function init() {
   Promise.all([
     fetch("laender_999_geo.json").then(r => r.json()),
     fetch("data.json").then(r => r.json()),
-  ]).then(([geo, vd]) => {
+  ]).then(([gj, vd]) => {
+    geo = gj;
     allData = vd;
     rebuildRegionLookup();
     geoLayer = L.geoJson(geo, {
-      style: () => ({ fillColor: "#cccccc", weight: 1.5, color: "white", fillOpacity: 0.78 }),
+      style: () => ({
+        fillColor: "#cccccc",
+        weight: 1.5,
+        color: "white",
+        fillOpacity: 0.78,
+      }),
       onEachFeature: (feature, layer) => {
         const name = feature.properties.name;
         layer.on({
