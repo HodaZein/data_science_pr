@@ -151,8 +151,8 @@ function init() {
     allData = vd;
     rebuildRegionLookup();
     geoLayer = L.geoJson(geo, {
-      style: () => ({
-        fillColor: "#cccccc",
+      style: feature => ({
+        fillColor: colorFor(regionData[feature.properties.name], getStops()),
         weight: 1.5,
         color: "white",
         fillOpacity: 0.78,
