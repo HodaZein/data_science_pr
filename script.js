@@ -63,16 +63,17 @@ function colorFor(value, stops) {
   return PALETTE[0];
 }
 
+function styleFor(feature) {
+  return {
+    fillColor: colorFor(regionData[feature.properties.name], getStops()),
+    weight: 1.5,
+    color: "white",
+    fillOpacity: 0.78,
+  };
+}
+
 function redrawLayer() {
-  const stops = getStops();
-  if (geoLayer) {
-    geoLayer.setStyle(feature => ({
-      fillColor: colorFor(regionData[feature.properties.name], stops),
-      weight: 1.5,
-      color: "white",
-      fillOpacity: 0.78,
-    }));
-  }
+  if (geoLayer) geoLayer.setStyle(styleFor);
 }
 
 function redrawLegend() {
@@ -151,24 +152,20 @@ function init() {
     allData = vd;
     rebuildRegionLookup();
     geoLayer = L.geoJson(geo, {
-      style: feature => ({
-        fillColor: colorFor(regionData[feature.properties.name], getStops()),
-        weight: 1.5,
-        color: "white",
-        fillOpacity: 0.78,
-      }),
+      style: styleFor,
       onEachFeature: (feature, layer) => {
         const name = feature.properties.name;
         layer.on({
           mouseover: () => {
             layer.setStyle({ weight: 3, color: "#333" });
+            if (layer.bringToFront) layer.bringToFront();
             const v = regionData[name];
             layer.bindTooltip(
               `<b>${name}</b><br>${currentMetric.label}: ${fmt(v, currentMetric.suffix)}`,
               { sticky: true }
             ).openTooltip();
           },
-          mouseout: () => geoLayer.resetStyle(layer),
+          mouseout: () => layer.setStyle(styleFor(feature)),
           click: () => {
             map.fitBounds(layer.getBounds(), { padding: [20, 20] });
             showPanel(name);
